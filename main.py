@@ -1,6 +1,6 @@
 from collections import UserDict
-from datetime import datetime, timedelta
-import pickle
+from datetime import datetime
+import json
 
 
 class Field:
@@ -45,10 +45,10 @@ class Birthday(Field):
     def value(self, new_value):
         if new_value is not None:
             try:
-                datetime.strptime(new_value, "%Y-%m-%d")
+                datetime.strptime(new_value, "%d.%m.%Y")
             except ValueError:
                 raise ValueError(
-                    "Invalid birthday format. Please use YYYY-MM-DD")
+                    "Invalid birthday format. Please use DD.MM.YYYY")
         self._value = new_value
 
     def days_to_birthday(self):
@@ -56,14 +56,14 @@ class Birthday(Field):
             return None
         today = datetime.now().date()
         birthday = datetime.strptime(
-            self._value, "%Y-%m-%d").date().replace(year=today.year)
+            self._value, "%d.%m.%Y").date().replace(year=today.year)
         if birthday < today:
             birthday = birthday.replace(year=today.year + 1)
         return (birthday - today).days
 
     def to_string(self):
-        date = datetime.strptime(self._value, "%Y-%m-%d")
-        return date.strftime('%Y-%m-%d')
+        date = datetime.strptime(self._value, "%d.%m.%Y")
+        return date.strftime('%d.%m.%Y')
 
 
 class Record:
@@ -98,7 +98,7 @@ class Record:
         return None
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {self.birthday.value}"
 
 
 class AddressBook(UserDict):
@@ -124,15 +124,31 @@ class AddressBook(UserDict):
         return results
 
     def save(self, filename):
-        with open(filename, 'wb') as file:
-            pickle.dump(self.data, file)
+        with open(filename, 'w') as file:
+            data = []
+            for record in self.data.values():
+                phones = [phone.value for phone in record.phones]
+                item = {
+                    'name': record.name.value,
+                    'birthday': record.birthday.value,
+                    'phones': phones
+                }
+                data.append(item)
+            json.dump(data, file)
+        
 
     def load(self, filename):
-        with open(filename, 'rb') as file:
-            self.data = pickle.load(file)
-
-    def __iter__(self):
-        return iter(self.data.values())
+        with open(filename, 'r') as file:
+            data = json.load(file)
+            self.data = {}
+            for item in data:
+                name = item['name']
+                birthday = item['birthday']
+                phones = item['phones']
+                record = Record(name, birthday)
+                for phone in phones:
+                    record.add_phone(phone)
+                self.add_record(record)
 
 
 def input_error(func):
@@ -156,7 +172,7 @@ class Menu:
             "5": self.find_contact,
             "6": self.days_until_birthday,
             "7": self.search_contacts,
-            "8": self.save_address_book,
+            #"8": self.save_address_book,
             "9": self.load_address_book,
             "0": self.quit
         }
@@ -185,19 +201,21 @@ class Menu:
             else:
                 print(f"{choice} is not a valid choice")
 
+
     def show_contacts(self):
-        if self.address_book:
-            for contact in self.address_book:
-                print(contact)
+        if self.address_book.data:
+            for contact in self.address_book.data.values():
+                print(f"Name: {contact.name.value}, Phones: {', '.join(p.value for p in contact.phones)}, Birthday: {contact.birthday.value}")
         else:
             print("Address book is empty")
+
 
     def days_until_birthday(self):
         name = input("Enter the name of the contact: ")
         contact = self.address_book.find(name)
         if contact:
             birthday = datetime.strptime(
-                contact.birthday.to_string(), '%Y-%m-%d')
+                contact.birthday.to_string(), '%d.%m.%Y')
             today = datetime.today()
             next_birthday = datetime(today.year, birthday.month, birthday.day)
             if today > next_birthday:
@@ -212,27 +230,35 @@ class Menu:
     def add_contact(self):
         name = input("Enter name: ")
         phones = input("Enter phone numbers separated by space: ").split()
-        birthday = input("Enter birthday (optional, format: YYYY-MM-DD): ")
+        birthday = input("Enter birthday (optional, format: DD.MM.YYYY): ")
+        if not birthday.strip():  
+            birthday = None
         record = Record(name, birthday)
         for phone in phones:
             record.add_phone(phone)
         self.address_book.add_record(record)
+        self.save_address_book()
+        
 
     @input_error
     def edit_contact(self):
         name = input("Enter name: ")
         record = self.address_book.find(name)
-        if record:
+        if not record:
+            print("Contact does not exist")
+        else:
+            new_name = input("Enter new name: ")
             phone = input("Enter phone number: ")
             new_phone = input("Enter new phone number: ")
+            record.name.value = new_name
             record.edit_phone(phone, new_phone)
-        else:
-            print("Contact does not exist")
+            self.save_address_book()
 
     @input_error
     def delete_contact(self):
         name = input("Enter name: ")
         self.address_book.delete(name)
+        self.save_address_book()
 
     @input_error
     def find_contact(self):
@@ -252,9 +278,18 @@ class Menu:
         else:
             print("No matching contacts found")
 
+
     def save_address_book(self):
-        filename = input("Enter filename to save address book: ")
-        self.address_book.save(filename)
+        filename = "abook.json"
+        with open(filename, 'w') as file:
+            data = []
+            for record in self.address_book.data.values():
+                data.append({
+                    'name': record.name.value,
+                    'birthday': record.birthday.value,
+                    'phones': [phone.value for phone in record.phones]
+                })
+            json.dump(data, file)
         print("Address book saved successfully")
 
     def load_address_book(self):
