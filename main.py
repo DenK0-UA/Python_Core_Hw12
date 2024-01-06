@@ -172,10 +172,11 @@ class Menu:
             "5": self.find_contact,
             "6": self.days_until_birthday,
             "7": self.search_contacts,
-            #"8": self.save_address_book,
+            "8": self.save_address_book,
             "9": self.load_address_book,
             "0": self.quit
         }
+        self.load_address_book()
 
     def menu(self):
         print("""
@@ -186,8 +187,8 @@ class Menu:
         5. Find contact
         6. Days until birthday
         7. Search contacts
-        8. Save address book
-        9. Load address book             
+        8. Save address book (optional)
+        9. Load address book (optional)            
         0. Quit
         """)
 
@@ -293,10 +294,10 @@ class Menu:
         print("Address book saved successfully")
 
     def load_address_book(self):
-        filename = input("Enter filename to load address book from: ")
+        filename = "abook.json"
         try:
             self.address_book.load(filename)
-            print("Address book loaded successfully")
+            #print("Address book loaded successfully")
         except FileNotFoundError:
             print("File not found")
 
