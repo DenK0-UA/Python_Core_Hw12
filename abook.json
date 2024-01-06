@@ -1,1 +1,9 @@
-[{"name": "Den", "birthday": "26.09.1988", "phones": ["0637344967"]}, {"name": "Nat", "birthday": "30.01.1987", "phones": ["0638280932"]}, {"name": "Vas", "birthday": "30.01.2014", "phones": ["0631234567"]}]
+[ {"name": "Denis", "birthday": "26.09.1988", "phones": ["0637344967"]},
+  {"name": "Nataliia", "birthday": "30.01.1987", "phones": ["0638280932"]},
+  {"name": "Vasylyna", "birthday": "30.01.2014", "phones": ["0631234567"]},
+  {"name": "Dad", "birthday": "13.11.1960", "phones": ["0631233361", "0985799562"]},
+  {"name": "Mam", "birthday": "29.07.1963", "phones": ["0668569717", "0730421870", "0445700924"]},
+  {"name": "Mother in law", "birthday": "29.03.1963", "phones": ["0930479880", "0664875870"]},
+  {"name": "Piter", "birthday": "01.01.2022", "phones": []},
+  {"name": "Zhuzha", "birthday": null, "phones": ["0501234567"]}
+]
